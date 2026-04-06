@@ -1,0 +1,199 @@
+📘 CAHIER DES CHARGES COMPLET
+🔧 Logiciel de Gestion des Interventions Clients
+________________________________________
+1. 🎯 Présentation du projet
+1.1 Contexte général
+L’entreprise est une société moderne spécialisée dans les services informatiques et la maintenance des équipements informatiques en environnement professionnel.
+Elle intervient exclusivement auprès de clients entreprises (PME, grandes entreprises, institutions). Ces clients utilisent une plateforme digitale permettant de gérer l’ensemble des interventions techniques.
+Le système vise à remplacer totalement les processus papier par une solution numérique centralisée, fiable et traçable.
+________________________________________
+1.2 Objectif du projet
+Le présent projet a pour objectif de concevoir un logiciel web permettant de :
+•	Gérer les clients professionnels 
+•	Gérer les utilisateurs associés à chaque entreprise 
+•	Permettre la création de requêtes d’intervention 
+•	Planifier et suivre les interventions techniques 
+•	Assurer la traçabilité complète des opérations 
+•	Générer des rapports et reçus d’intervention 
+•	Éliminer totalement la gestion papier 
+________________________________________
+2.  Périmètre du système
+Le système couvre :
+•	Gestion des entreprises clientes 
+•	Gestion des utilisateurs (admin / simple) 
+•	Gestion des requêtes d’intervention 
+•	Gestion des techniciens 
+•	Planification des interventions 
+•	Suivi des interventions en temps réel logique 
+•	Validation client et technicien 
+•	Génération de documents (reçus) 
+•	Archivage et reporting 
+________________________________________
+3. 👥 Acteurs du système
+3.1 Super Administrateur (Entreprise principale)
+Responsable global du système :
+•	Création des clients 
+•	Gestion des techniciens 
+•	Supervision globale 
+•	Accès à tous les rapports 
+•	Paramétrage du système 
+________________________________________
+3.2 Client (Entreprise)
+Représente une entreprise cliente.
+•	Peut créer plusieurs utilisateurs 
+•	Soumet des requêtes 
+•	Suit ses interventions 
+•	Valide les interventions 
+•	Consulte son historique 
+________________________________________
+3.3 Utilisateur Client
+Employé de l’entreprise cliente.
+•	Crée des requêtes 
+•	Consulte ses demandes 
+•	Suit les interventions 
+________________________________________
+
+
+3.4 Technicien
+Agent technique de l’entreprise prestataire.
+•	Reçoit les interventions 
+•	Se déplace chez le client 
+•	Effectue les réparations 
+•	Documente l’intervention 
+•	Valide la fin des travaux 
+________________________________________
+4. 🛠️ Modules fonctionnels
+________________________________________
+4.1 Module de gestion des clients
+Fonctionnalités :
+•	Création d’un client (entreprise) 
+•	Modification des informations client 
+•	Activation / désactivation client 
+•	Consultation de l’historique global 
+•	Gestion des utilisateurs associés 
+________________________________________
+4.2 Module utilisateurs
+Fonctionnalités :
+•	Création utilisateurs clients 
+•	Gestion des rôles (admin / simple) 
+•	Authentification sécurisée 
+•	Gestion des permissions 
+________________________________________
+4.3 Module requêtes d’intervention
+Fonctionnalités :
+Création requête :
+•	Titre du problème 
+•	Description détaillée 
+•	Niveau d’urgence (faible, moyen, élevé) 
+•	Ajout de fichiers (images, photos, vidéos) 
+•	Date automatique 
+•	Utilisateur auteur 
+Traitement :
+•	Numéro de ticket unique 
+•	Classement automatique 
+•	Attribution à un technicien 
+•	Suivi du statut 
+________________________________________
+4.4 Module gestion des médias (images / vidéos)
+Fonctionnalités :
+•	Upload sécurisé 
+•	Compression automatique des images 
+•	Limite de taille des fichiers 
+•	Stockage structuré par client et requête 
+•	Visualisation dans la requête 
+________________________________________
+4.5 Module planification des interventions
+Fonctionnalités :
+•	Assignation technicien 
+•	Définition date et heure 
+•	Envoi notification client 
+•	Historique des planifications 
+________________________________________
+4.6 Module validation d’intervention
+Étapes :
+•	Validation arrivée technicien par client 
+•	Confirmation intervention en cours 
+•	Validation fin intervention par client 
+•	Confirmation finale technicien 
+________________________________________
+4.7 Module intervention technique
+Fonctionnalités :
+•	Description des actions effectuées 
+•	Ajout de notes techniques 
+•	Suivi du statut 
+•	Enregistrement des pièces utilisées 
+________________________________________
+
+
+
+
+
+
+4.8 Module génération de reçu
+Fonctionnalités :
+•	Génération automatique PDF 
+•	Contenu complet intervention 
+•	Signature logique client/technicien 
+•	Téléchargement / impression 
+•	Envoi par email 
+________________________________________
+4.9 Module archivage et historique
+Fonctionnalités :
+•	Stockage permanent des interventions 
+•	Historique par client 
+•	Historique par technicien 
+•	Historique par date 
+•	Historique par type de problème 
+•	Traçabilité complète 
+________________________________________
+4.10 Module reporting et statistiques
+Fonctionnalités :
+•	Nombre d’interventions par période 
+•	Performance techniciens 
+•	Temps moyen de résolution 
+•	Clients les plus actifs 
+•	Types de pannes fréquentes 
+________________________________________
+5. 🔐 Sécurité du système
+•	Authentification obligatoire 
+•	Gestion des rôles 
+•	Journalisation des actions 
+•	Accès limité aux données clients 
+•	Sécurisation des fichiers uploadés 
+•	Protection contre accès non autorisés 
+________________________________________
+
+
+6. 📦 Contraintes techniques
+•	Application web responsive 
+•	Compatible mobile et desktop 
+•	Base de données relationnelle (MySQL) 
+•	Backend PHP / Laravel 
+•	Stockage fichiers hors base de données 
+________________________________________
+7. 📊 Données à stocker
+•	Clients 
+•	Utilisateurs 
+•	Requêtes 
+•	Interventions 
+•	Médias (images/vidéos) 
+•	Techniciens 
+•	Logs d’activité 
+•	Reçus PDF 
+________________________________________
+8. 🚫 Objectifs du système
+•	Supprimer le papier 
+•	Centraliser toutes les interventions 
+•	Améliorer la communication client-technicien 
+•	Garantir la traçabilité totale 
+•	Optimiser le temps d’intervention 
+•	Fiabiliser les opérations 
+________________________________________
+9.  Résumé final
+Ce logiciel est une plateforme complète de gestion d’interventions techniques permettant :
+•	La création et le suivi de tickets clients 
+•	La planification intelligente des interventions 
+•	La validation multi-acteurs (client + technicien) 
+•	La génération automatique de documents officiels 
+•	L’archivage complet et exploitable des données
+
