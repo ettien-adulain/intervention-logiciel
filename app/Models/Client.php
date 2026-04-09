@@ -42,7 +42,7 @@ class Client extends Model
 
     /**
      * Règle métier phase 3 / lien phase 5 : pas de nouvelle requête si client inactif.
-     * À appeler depuis `RequetesController@store` quand vous l’implémenterez.
+     * À appeler depuis l’action de création de requête (web ou API) lorsqu’elle existera.
      */
     public function peutRecevoirNouvellesRequetes(): bool
     {

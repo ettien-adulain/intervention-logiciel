@@ -6,16 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Medias extends Model
 {
-    //
+    protected $table = 'medias';
+
     protected $fillable = [
         'requete_id',
         'type',
         'chemin',
-        'taille'
+        'taille',
     ];
 
     public function requete()
     {
-        return $this->belongsTo(Requetes::class);
+        return $this->belongsTo(Requetes::class, 'requete_id');
     }
 }

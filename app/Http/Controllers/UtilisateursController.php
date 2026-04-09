@@ -7,6 +7,7 @@ use App\Http\Requests\StoreUtilisateurRequest;
 use App\Http\Requests\UpdateUtilisateurRequest;
 use App\Models\Client;
 use App\Models\Utilisateurs;
+use App\Support\Journalisation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -89,7 +90,21 @@ class UtilisateursController extends Controller
 
     public function update(UpdateUtilisateurRequest $request, Utilisateurs $utilisateur): RedirectResponse
     {
+        $statutAvant = $utilisateur->statut;
         $utilisateur->update($request->donneesSaufMotDePasseVide());
+        if ($utilisateur->wasChanged('statut')) {
+            Journalisation::trace(
+                $request,
+                'utilisateur_statut_modifie',
+                sprintf(
+                    'Utilisateur #%d (%s) : statut %s → %s',
+                    $utilisateur->id,
+                    $utilisateur->email,
+                    $statutAvant,
+                    $utilisateur->statut
+                )
+            );
+        }
 
         return redirect()
             ->route('utilisateurs.show', $utilisateur)

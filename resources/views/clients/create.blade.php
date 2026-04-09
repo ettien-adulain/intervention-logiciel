@@ -2,9 +2,9 @@
 
 @section('title', 'Nouveau client — ' . config('app.name'))
 
-@section('content')
-    <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Nouvelle entreprise cliente</h1>
+@section('page_title', 'Nouvelle entreprise cliente')
 
+@section('content')
     <div class="card" style="max-width: 36rem;">
         <form method="post" action="{{ route('clients.store') }}">
             @csrf

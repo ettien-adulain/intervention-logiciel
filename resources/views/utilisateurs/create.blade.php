@@ -2,12 +2,10 @@
 
 @section('title', 'Nouvel utilisateur — ' . config('app.name'))
 
-@section('content')
-    <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Nouveau compte</h1>
-    <p style="color: #64748b; margin-bottom: 1rem; font-size: 0.875rem;">
-        Super administrateur : tous les rôles. Administrateur client : uniquement des comptes pour son entreprise.
-    </p>
+@section('page_title', 'Nouveau compte')
+@section('page_subtitle', 'Super administrateur : tous les rôles. Administrateur client : comptes pour son entreprise uniquement.')
 
+@section('content')
     <div class="card" style="max-width: 40rem;">
         <form method="post" action="{{ route('utilisateurs.store') }}">
             @csrf

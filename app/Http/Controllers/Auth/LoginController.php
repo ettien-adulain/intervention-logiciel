@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\Journalisation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +45,11 @@ class LoginController extends Controller
         );
 
         if (! $ok) {
+            Journalisation::traceSansUtilisateur(
+                $request->ip(),
+                'connexion_echouee',
+                'Identifiants invalides ou compte inactif : '.($credentials['email'] ?? '')
+            );
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);
@@ -51,11 +57,25 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
+        Journalisation::trace(
+            $request,
+            'connexion_reussie',
+            'Connexion : '.Auth::user()->email
+        );
+
         return redirect()->intended(route('dashboard'));
     }
 
     public function destroy(Request $request): RedirectResponse
     {
+        if ($request->user()) {
+            Journalisation::trace(
+                $request,
+                'deconnexion',
+                'Déconnexion : '.$request->user()->email
+            );
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

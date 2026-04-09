@@ -1,15 +1,15 @@
 @if ($paginator->hasPages())
-    <nav style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; font-size: 0.875rem;">
+    <nav class="pagination-nav" aria-label="Pagination">
         @if ($paginator->onFirstPage())
-            <span style="opacity: 0.5;">&laquo; Précédent</span>
+            <span class="disabled">&laquo; Précédent</span>
         @else
-            <a href="{{ $paginator->previousPageUrl() }}" style="color: var(--ycs-red, #c41e3a);">&laquo; Précédent</a>
+            <a href="{{ $paginator->previousPageUrl() }}">&laquo; Précédent</a>
         @endif
-        <span style="color: #64748b;">Page {{ $paginator->currentPage() }} / {{ $paginator->lastPage() }}</span>
+        <span class="muted">Page {{ $paginator->currentPage() }} / {{ $paginator->lastPage() }}</span>
         @if ($paginator->hasMorePages())
-            <a href="{{ $paginator->nextPageUrl() }}" style="color: var(--ycs-red, #c41e3a);">Suivant &raquo;</a>
+            <a href="{{ $paginator->nextPageUrl() }}">Suivant &raquo;</a>
         @else
-            <span style="opacity: 0.5;">Suivant &raquo;</span>
+            <span class="disabled">Suivant &raquo;</span>
         @endif
     </nav>
 @endif

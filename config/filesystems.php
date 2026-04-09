@@ -47,6 +47,27 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Phase 6 : fichiers médias hors BDD, non exposés en URL publique directe.
+         * Accès uniquement via route authentifiée `requetes.medias.fichier`.
+         */
+        'medias_interventions' => [
+            'driver' => 'local',
+            'root' => storage_path('app/medias_interventions'),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        /*
+         * Phase 10 : PDF de reçu d’intervention (accès via routes authentifiées).
+         */
+        'recus_interventions' => [
+            'driver' => 'local',
+            'root' => storage_path('app/recus_interventions'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

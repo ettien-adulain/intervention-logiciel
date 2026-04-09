@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
+use App\Support\Journalisation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -68,7 +69,21 @@ class ClientController extends Controller
 
     public function update(UpdateClientRequest $request, Client $client): RedirectResponse
     {
+        $statutAvant = $client->statut;
         $client->update($request->safeForClient());
+        if ($client->wasChanged('statut')) {
+            Journalisation::trace(
+                $request,
+                'client_statut_modifie',
+                sprintf(
+                    'Client #%d (%s) : statut %s → %s',
+                    $client->id,
+                    $client->nom_entreprise,
+                    $statutAvant,
+                    $client->statut
+                )
+            );
+        }
 
         return redirect()
             ->route('clients.show', $client)

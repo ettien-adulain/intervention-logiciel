@@ -2,10 +2,10 @@
 
 @section('title', 'Modifier — ' . $client->nom_entreprise)
 
-@section('content')
-    <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Modifier la fiche client</h1>
-    <p style="color: #64748b; margin-bottom: 1rem;">{{ $client->nom_entreprise }}</p>
+@section('page_title', 'Modifier la fiche client')
+@section('page_subtitle', $client->nom_entreprise)
 
+@section('content')
     <div class="card" style="max-width: 36rem;">
         <form method="post" action="{{ route('clients.update', $client) }}">
             @csrf

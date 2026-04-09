@@ -167,11 +167,16 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** pièces jointes sécurisées et traçables.
 
-**À faire :**
-- Upload avec limite de taille, types autorisés, nommage et dossier par client/requête (hors BDD).
-- Enregistrer une ligne **`medias`** : `requete_id`, `type` (`image` / `video`), `chemin`, `taille`.
-- Optionnel CDC : compression images côté serveur avant enregistrement.
-- Affichage des médias sur la fiche requête ; contrôle d’accès (même périmètre que la requête).
+**Implémenté :**
+- **Stockage** : disque Laravel **`medias_interventions`** → `storage/app/medias_interventions` (privé, pas d’URL publique) ; chemins relatifs `{client_id}/{requete_id}/{uuid}.ext`.
+- **Config** : `config/medias.php` — taille max (`MEDIA_MAX_UPLOAD_KO`), MIME autorisés, largeur max / qualité JPEG pour compression.
+- **Contrôleur** : `MediasController` — `store` (upload + ligne `medias`), `fichier` (réponse `file()` avec `authorize('view', $requete)`), `destroy` (fichier + ligne, `authorize('update', $requete)`). Compression optionnelle JPEG/PNG/WebP via **GD** après enregistrement.
+- **Validation** : `StoreMediaRequest` (taille + MIME depuis la config ; `authorize` via `can('update', $requete)`).
+- **UI** : fiche requête `resources/views/requetes/show.blade.php` — liste, miniatures / vidéo inline, formulaire d’upload, suppression.
+- **Routes** : `requetes.medias.store`, `requetes.medias.fichier`, `requetes.medias.destroy` dans `routes/web.php` ; bindings `{requete}` / `{media}` dans `AppServiceProvider`.
+- **Tests** : `tests/Feature/MediaPhase6Test.php`.
+
+**Note :** pas de `storage:link` nécessaire tant que la diffusion passe par la route authentifiée `fichier`.
 
 **Tables :** **`medias`**, **`requetes`**.
 
@@ -181,11 +186,14 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** planifier l’intervention et informer le client.
 
-**À faire :**
-- Création d’une **`planifications`** : `requete_id`, `technicien_id`, `date_intervention`, `message`, `statut` (`planifiee`, `confirmee`, `annulee`).
-- Mettre à jour **`requetes`** : `date_planification`, éventuellement `statut = 'planifiee'`, cohérence avec `technicien_id`.
-- **Historique des planifications** : liste ordonnée par `created_at` pour une même requête (plusieurs lignes possibles si reports).
-- **Notification client** : email (ou autre canal) au moment de la planification — hors BDD, mais peut être journalisé dans **`logs`**.
+**Implémenté :**
+- **Création** : `POST requetes/{requete}/planifications` — `RequetePlanificationController@store` + `StorePlanificationRequest` ; réservé au **super admin** (`assignerTechnicien`). Crée une ligne **`planifications`** (`statut = planifiee`), met à jour **`requetes`** : `technicien_id`, `date_planification`, `date_intervention`, `statut = planifiee`.
+- **Historique** : relation `Requetes::planifications()` (tri `created_at` décroissant) ; bloc sur `requetes/show.blade.php`.
+- **Statuts** : `PATCH requetes/{requete}/planifications/{planification}` — `UpdatePlanificationRequest` : **confirmee** (client même entreprise, `confirmerPlanification`) ; **annulee** (super admin).
+- **E-mail** : `App\Mail\PlanificationNotifiee` → vue `emails/planification-notifiee` ; destinataire = e-mail **client** ou premier **admin client** actif si l’entreprise n’a pas d’e-mail.
+- **Journal** : table **`logs`** (`action` `planification_creee`, `planification_statut_confirmee`, `planification_statut_annulee`) ; modèle **`Log`** aligné sur les colonnes BDD (`ip_address`, etc.).
+- **Policy** : `RequetesPolicy::confirmerPlanification` pour les rôles client sur la même entreprise.
+- **Tests** : `tests/Feature/PlanificationPhase7Test.php`.
 
 **Tables :** **`planifications`**, **`requetes`**, **`utilisateurs`**.
 
@@ -195,13 +203,13 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** tracer les validations client et technicien.
 
-**À faire :**
-- Une ligne **`validations`** par requête concernée (ou mise à jour de la même ligne) avec :
-  - `client_arrivee` : validation « arrivée du technicien » côté client.
-  - `client_fin` : validation « fin d’intervention » côté client.
-  - `technicien_fin` : confirmation finale technicien.
-- Le CDC mentionne aussi **« confirmation intervention en cours »** : soit un champ supplémentaire à ajouter en migration (ex. `client_intervention_en_cours`), soit une convention sur `requetes.statut` + horodatage — à clarifier en conception pour ne pas perdre l’exigence.
-- Interfaces distinctes selon rôle (client vs technicien).
+**Implémenté :**
+- **Schéma** : migration `2026_04_08_120000_phase8_validations_horodatages` — une ligne **`validations`** par requête (`requete_id` **unique**), horodatages nullable : `client_arrivee_at`, `client_intervention_en_cours_at`, `client_fin_at`, `technicien_fin_at` (remplace les anciens booléens + `date_validation`).
+- **API web** : `POST requetes/{requete}/validations` — `RequeteValidationController@store` + `StoreRequeteValidationRequest` (`etape` : `client_arrivee` | `client_intervention_en_cours` | `client_fin` | `technicien_fin`). Création paresseuse de la ligne ; idempotence si l’étape est déjà horodatée (`validation_deja_enregistree`).
+- **Policy** : `validerArriveeClient`, `validerInterventionEnCoursClient`, `validerFinInterventionClient` (rôles client, même entreprise, **technicien assigné**) ; `validerFinTechnicien` (technicien assigné à la requête). Pas d’actions validation pour le super admin sur ce flux (lecture seule sur la fiche).
+- **Journal** : `logs.action` = `validation_client_arrivee`, `validation_client_intervention_en_cours`, `validation_client_fin`, `validation_technicien_fin`.
+- **UI** : bloc « Validations » sur `requetes/show.blade.php` — récapitulatif + boutons selon `@can` (client vs technicien).
+- **Tests** : `tests/Feature/ValidationsPhase8Test.php`.
 
 **Tables :** **`validations`**, **`requetes`**, **`utilisateurs`**.
 
@@ -211,10 +219,14 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** compte rendu après ou pendant l’intervention.
 
-**À faire :**
-- Création / édition **`interventions`** : `rapport` (actions effectuées), `pieces_utilisees`, `heure_debut`, `heure_fin`, `statut` (`en_cours`, `terminee`).
-- Lier à la **requête** et au **technicien** (`requete_id`, `technicien_id`).
-- Cohérence avec `requetes.statut` (passage `en_cours` → `terminee` / `cloturee` selon règles métier).
+**Implémenté :**
+- **Schéma** : table **`interventions`** (déjà en place) — `rapport`, `pieces_utilisees`, `heure_debut`, `heure_fin`, `statut` (`en_cours`, `terminee`), `requete_id`, `technicien_id` (aligné sur le technicien assigné à la requête).
+- **API web** : `POST requetes/{requete}/intervention` (`store`) — première fiche uniquement ; `PATCH requetes/{requete}/intervention` (`update`). `SaveInterventionRequest` : si `statut = terminee`, **`heure_fin`** obligatoire ; cohérence début / fin ; une fois **`terminee`**, le statut ne peut plus repasser en `en_cours`.
+- **Policy** : `gererInterventionTerrain` = technicien assigné à la requête (même règle que fin de validation technicien).
+- **Requête** : passage **`requetes.statut`** à `en_cours` lorsque l’intervention est `en_cours` (sauf si la requête est déjà `terminee` / `cloturee`) ; à **`terminee`**, la requête passe en `terminee` et **`date_fin`** = `heure_fin` ou maintenant. Le statut **`cloturee`** reste pour une évolution ultérieure (pas géré ici).
+- **Journal** : `intervention_creee`, `intervention_mise_a_jour`, `intervention_terminee` (lors du passage à terminée, création ou mise à jour).
+- **UI** : bloc sur `requetes/show.blade.php` (résumé + formulaire technicien).
+- **Tests** : `tests/Feature/InterventionsPhase9Test.php`.
 
 **Tables :** **`interventions`**, **`requetes`**, **`utilisateurs`**.
 
@@ -224,10 +236,14 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** document officiel téléchargeable et archivable.
 
-**À faire :**
-- Génération PDF (bibliothèque Laravel type DomPDF / Snappy) : synthèse requête, client, technicien, dates, rapport, pièces, signatures « logiques » (cases cochées / horodatages issus de **`validations`**).
-- Stockage fichier ; enregistrer **`recus`** avec `requete_id` et `chemin_pdf`.
-- Actions : téléchargement, impression, envoi email (lien ou pièce jointe).
+**Implémenté :**
+- **PDF** : package **`barryvdh/laravel-dompdf`** ; vue `pdf/recu-intervention` (requête, client, technicien, intervention, validations avec horodatages).
+- **Stockage** : disque **`recus_interventions`** (`storage/app/recus_interventions`), chemin type `requetes/{id}/recu.pdf` ; table **`recus`** avec `requete_id` **unique** + `chemin_pdf` (`updateOrCreate`).
+- **Routes** : `POST requetes/{requete}/recu/pdf` (générer / régénérer), `GET …/recu/pdf` (téléchargement), `POST …/recu/envoyer` (e-mail avec **pièce jointe**). Config `config/recus.php` (`disk`).
+- **Policy** : `genererRecuPdf` si `view` + intervention **`terminee`** ; `telechargerRecuPdf` / `envoyerRecuPdfEmail` si reçu enregistré avec fichier. **Mailable** `RecuInterventionEnvoye` ; destinataire = e-mail entreprise ou premier admin client actif (comme planification).
+- **Journal** : `recu_pdf_genere`, `recu_pdf_envoye`.
+- **UI** : bloc « Reçu PDF » sur `requetes/show.blade.php`.
+- **Tests** : `tests/Feature/RecusPhase10Test.php`.
 
 **Tables :** **`recus`**, jointures **`requetes`**, **`clients`**, **`utilisateurs`**, **`interventions`**, **`validations`**.
 
@@ -237,13 +253,17 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** consultation durable et filtres multiples.
 
-**À faire :**
-- Les données restent en base (pas de suppression métier des interventions terminées sauf politique d’archivage explicite).
-- Écrans d’historique avec filtres :
-  - par **client** : `requetes.client_id` ;
-  - par **technicien** : `requetes.technicien_id` / `interventions.technicien_id` ;
-  - par **date** : `date_creation`, `date_intervention`, `heure_debut` / `heure_fin` ;
-  - par **type de problème** : si seulement `titre`/`description` existent, prévoir recherche plein texte ou champ catégorie futur (écart possible avec le CDC si aucune table `types_panne` n’est ajoutée).
+**Implémenté :**
+- **Pas de suppression métier** : rappel UI sur l’écran ; aucune action de purge ajoutée.
+- **Écran** : `GET historique/requetes` — `HistoriqueRequeteController@index`, nom de route `historique.requetes`, lien **Historique** dans `layouts/app.blade.php`.
+- **Périmètre** : même base que la liste requêtes — `Requetes::visiblesPour($user)` + `viewAny` sur `Requetes`.
+- **Filtres** :
+  - **Client** (`requetes.client_id`) : super admin uniquement ;
+  - **Technicien** (`requetes.technicien_id`) : super admin (tous les techniciens actifs) ; rôles client — liste dérivée des techniciens déjà présents sur les tickets de l’entreprise (équivalent périmètre `interventions.technicien_id` pour les fiches liées) ;
+  - **Période** : `date_debut` / `date_fin` + axe `date_creation` | `date_intervention` | `intervention_debut` (`interventions.heure_debut`) | `intervention_fin` (`interventions.heure_fin`) ;
+  - **Problème** : recherche **LIKE** sur `titre` et `description` (pas de table `types_panne`).
+- **Présentation** : tableau enrichi (dates, technicien, plage intervention), pagination simple, lien vers la fiche requête.
+- **Tests** : `tests/Feature/HistoriquePhase11Test.php`.
 
 **Tables :** **`requetes`**, **`interventions`**, **`planifications`**, **`validations`**, **`recus`**, **`medias`**.
 
@@ -253,13 +273,18 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** tableaux de bord et indicateurs.
 
-**À faire :**
-- Requêtes agrégées SQL / Eloquent :
-  - nombre d’interventions par période (`interventions`, `requetes.dates`) ;
-  - performance par technicien (volume, délais) ;
-  - temps moyen de résolution (écart `date_creation` → `date_fin` ou `heure_fin`) ;
-  - clients les plus actifs (count par `client_id`) ;
-  - pannes fréquentes (analyse `titre` / mots-clés ou future table de catégories).
+**Implémenté :**
+- **Route** : `GET /reporting` — `ReportingController@index` (`reporting.index`), filtre `date_debut` / `date_fin` (défaut : **30 derniers jours** jusqu’à aujourd’hui). Lien **Reporting** dans la barre de navigation et le tableau de bord.
+- **Autorisation** : `viewAny` sur `Requetes` ; **périmètre** des agrégats = `Requetes::visiblesPour($user)` (comme listes / historique).
+- **Service** `RequeteReportingService::resume()` :
+  - **Requêtes créées** sur la période (`date_creation`) ;
+  - **Interventions terminées** dont `heure_fin` est dans la période ;
+  - **Par technicien** : volume + **délai moyen (h)** entre `requetes.date_creation` et `interventions.heure_fin` ;
+  - **Temps moyen de résolution** : moyenne des écarts `date_creation` → `date_fin` pour tickets avec `date_fin` dans la période ;
+  - **Clients actifs** : top 10 par nombre de tickets créés (jointure `clients`) ;
+  - **Titres fréquents** : top 10 libellés de `titre` identiques (pas de mots-clés ni table `types_panne`).
+- **UI** : `resources/views/reporting/index.blade.php` (cartes + tableaux).
+- **Tests** : `tests/Feature/ReportingPhase12Test.php`.
 
 **Tables :** principalement **`requetes`**, **`interventions`**, **`clients`**, **`utilisateurs`**.
 
@@ -269,10 +294,14 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 
 **Objectif :** traçabilité des actions et protection des fichiers.
 
-**À faire :**
-- Écrire dans **`logs`** : `user_id`, `action`, `description`, `ip_address`, `created_at` pour actions sensibles (connexion, changement statut, upload, génération PDF, validation).
-- Contrôle d’accès aux **URLs de fichiers** (pas de lien direct public non authentifié si données confidentielles).
-- Validation stricte des uploads (MIME, taille, renommage).
+**Dernière phase numérotée** du découpage (les modules CDC hors périmètre « phases » restent décrits dans la synthèse et les écarts).
+
+**Implémenté :**
+- **Journalisation centralisée** : `App\Support\Journalisation` (`trace` / `traceSansUtilisateur`) → table **`logs`** (`user_id`, `action`, `description`, `ip_address`, timestamps).
+- **Événements tracés** (non exhaustif) : `connexion_reussie`, `connexion_echouee`, `deconnexion`, `client_statut_modifie`, `utilisateur_statut_modifie`, `media_upload`, `media_supprime`, `requete_statut_modifie` (synchro intervention), actions existantes planification / validation / intervention / PDF (`recu_pdf_telecharge` en plus de génération / envoi).
+- **Fichiers** : médias et PDF reçus servis **uniquement** par routes `auth` + `compte.actif` + policies (`requetes.medias.fichier`, `requetes.recu.pdf.download`) ; disques **hors** `public` direct.
+- **Uploads** : `config/medias.php` — liste d’**extensions**, tableau **MIME attendus par extension**, contrôle **nom de fichier** (pas de `..` / séparateurs) ; stockage **UUID** + extension (inchangé).
+- **Tests** : `tests/Feature/SecuritePhase13Test.php`.
 
 **Tables :** **`logs`**, **`utilisateurs`**.
 
@@ -299,7 +328,7 @@ Document de référence : alignement entre le **cahier des charges** (`cahier_ch
 ## Écarts à anticiper (hors script SQL actuel)
 
 1. **Numéro de ticket** affichable / unique : à ajouter ou à dériver de `id`.
-2. **« Confirmation intervention en cours »** : pas de colonne dédiée dans `validations` — extension du schéma ou usage combiné statuts + dates.
+2. **« Confirmation intervention en cours »** : couverte en phase 8 par `validations.client_intervention_en_cours_at`.
 3. **Types / catégories de pannes** : utile pour le reporting « types fréquents » ; absent du SQL actuel.
 4. **Contraintes FK** : absentes du dump ; à ajouter en phase 1 (voir tableau de vérification ci-dessus).
 5. **Table `utilisateurs`** : remplace la convention Laravel `users` ; le code doit utiliser ce nom de table explicitement.

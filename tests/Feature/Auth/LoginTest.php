@@ -11,6 +11,13 @@ class LoginTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_la_racine_redirige_un_invite_vers_la_connexion(): void
+    {
+        $response = $this->get('/');
+
+        $response->assertRedirect(route('login'));
+    }
+
     public function test_connexion_redirige_vers_dashboard_avec_identifiants_valides(): void
     {
         Utilisateurs::query()->create([

@@ -2,10 +2,10 @@
 
 @section('title', 'Modifier — ' . $utilisateur->prenom . ' ' . $utilisateur->nom)
 
-@section('content')
-    <h1 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Modifier le compte</h1>
-    <p style="color: #64748b; margin-bottom: 1rem;">{{ $utilisateur->email }}</p>
+@section('page_title', 'Modifier le compte')
+@section('page_subtitle', $utilisateur->email)
 
+@section('content')
     <div class="card" style="max-width: 40rem;">
         <form method="post" action="{{ route('utilisateurs.update', $utilisateur) }}">
             @csrf
